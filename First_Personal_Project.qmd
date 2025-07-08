@@ -1,0 +1,98 @@
+---
+title: "First_Personal_PRoject"
+author: "Stellamarries"
+format: html
+editor: visual
+---
+
+```{r}
+# Laoding the necessary libraries
+library(tidyverse) # for data wrangling
+library(survival) # for survival object and models
+# install.packages("survminer")
+library(survminer) # for visualising survival analysis
+library(ggplot2)
+
+```
+
+```{r}
+# Laod the dataset
+Survival_data <- read.csv("C:\\Users\\PC\\Downloads\\simulated_cancer_survival.csv")
+
+# Data checks
+head(Survival_data)
+str(Survival_data)
+# View(Survival_data)
+glimpse(Survival_data)
+```
+
+
+# Objective 1 : Estimate the Overall Survival Rates Over Time
+```{r}
+# Using Kaplan-Meier estimator without grouping
+surv_object <- Surv(time = Survival_data$Time, event = Survival_data$Status) # create a survival object
+
+km_fit <- survfit(surv_object ~ 1, data = Survival_data) # ~1 means overall, no stratification
+
+# Plot the overall survival curve
+ggsurvplot(km_fit,
+           conf.int = TRUE,
+           risk.table = TRUE,
+           title = "Overall Survival Curve",
+           xlab = "Time (months)",
+           ylab = "Survival Probability")
+```
+
+# Objective 2 : Compare Survival Curves by Gender
+```{r}
+# Stratify survival estimates based on Gender column
+km_gender <- survfit(surv_object ~ Gender, data = Survival_data)
+
+ggsurvplot(km_gender,
+           data = Survival_data,
+           pval = TRUE,
+           conf.int = TRUE,
+           risk.table = TRUE,
+           title = "Survival Curves by Gender",
+           xlab = "Time (Months)",
+           legend.title = "Gender")
+
+
+
+```
+
+# Objective 3 : Compare Survival Curves by Treatment Type
+
+```{r}
+km_treatment_type <- survfit(surv_object ~ TreatmentType , data = Survival_data)
+
+ggsurvplot(km_treatment_type,
+           km_fit = TRUE,
+           data = Survival_data,
+           pval = TRUE,
+           conf.int = TRUE,
+           title = "Survival by Treatment Type", 
+           xlab = "Time(Months)",
+           legend.title = "Treatment Type")
+```
+
+# Objective 4 : Identify Predictors of Survival time
+```{r}
+# Create a Cox Proportional Hazard Model
+Cox_model <- coxph(surv_object ~ Age + Gender + TreatmentType, data = Survival_data)
+
+summary(Cox_model)
+```
+
+
+# Objective 5: Log-Rank Tests to Assess Differences
+```{r}
+# Statistical test to compare survival tests
+logrank_gender <- survdiff(surv_object ~ Gender, data = Survival_data)
+logrank_treamenttype <- survdiff(surv_object ~ TreatmentType, data = Survival_data)
+
+print(logrank_gender) # Comparison between male and female
+
+print(logrank_treamenttype) # test results between treatments
+```
+
